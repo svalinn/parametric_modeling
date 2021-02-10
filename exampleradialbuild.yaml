@@ -1,0 +1,13 @@
+# Tokamak radial build, radially outward from plasma
+# Format: <material_region>: <thickness [cm]>
+---
+#Inboard:
+fw: 5
+breeder: 50
+vv: 45
+
+#Outboard:
+#  fw: 5
+#  blanket: 100
+#  vv: 40
+#  magnets: 60
