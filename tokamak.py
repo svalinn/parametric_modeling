@@ -38,9 +38,6 @@ def build_torus(major_radius,minor_radius,radial_build):
 	cubit.cmd("group 'mat:Vacuum' add vol 1")
 	vol_id = len(thicknesses) + 2
 	for id, layer_name in zip(range(vol_id-1,1,-1), reversed(layers)):
-		print(id)
-		print(layer_name)
-		print(vol_id)
 		cubit.cmd("subtract volume "+str(id - 1)+" from volume "+str(id)+" keep_tool")
 		cubit.cmd("group 'mat:"+ layer_name +"' add vol " + str(vol_id))
 		vol_id += 1
