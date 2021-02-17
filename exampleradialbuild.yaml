@@ -1,0 +1,6 @@
+# Tokamak radial build, radially outward from plasma
+# Format: <material_region>: <thickness [cm]>
+---
+fw: 5
+breeder: 50
+vv: 45
