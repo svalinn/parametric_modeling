@@ -1,6 +1,20 @@
 # Tokamak radial build, radially outward from plasma
 # Format: <material_region>: <thickness [cm]>
 ---
-fw: 5
-breeder: 50
-vv: 45
+Inboard:
+  first_wall: 4
+  breeder: 49
+  manifold: 6
+  structural_ring: 20
+  vacuum_vessel: 10
+  lt_shield: 23
+  tf_magnets: 63
+
+Outboard:
+  first_wall: 4
+  breeder: 100
+  manifold: 6
+  structural_ring: 20
+  vacuum_vessel: 10
+  lt_shield: 17
+  tf_magnets: 63
