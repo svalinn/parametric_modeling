@@ -75,6 +75,19 @@ def contor(major_radius, minor_radius, radial_build):
     for radius in radii:
         cubit.torus(major_radius,radius)
 
+def add_graveyard(col_id, length):
+    cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
+    vol_id += 1
+    cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
+    vol_id += 1
+    cubit.cmd("subtract vol " + str(vol_id - 1) + " from vol " + str(vol_id))
+    vol_id += 1
+
+    cubit.cmd("group 'mat:Graveyard' add vol " + str(vol_id))
+
+    return vol_id
+
+
 def assemble_layers(last_id, first_id, layers, cyl_id=None, ib_ob=None):
     """
     Assemble tori into layers, either inboard, outboard or symmetric
@@ -174,16 +187,8 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
         vol_id = assemble_layers(vol_id, plasma_id, layers)
 
     if graveyard == True:
-        length = 4*major_radius
-        cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
-        vol_id += 1
-        cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
-        vol_id += 1
-        cubit.cmd("subtract vol " + str(vol_id - 1) + " from vol " + str(vol_id))
-        vol_id += 1
-
-        cubit.cmd("group 'mat:Graveyard' add vol " + str(vol_id))
-
+        vol_id = add_graveyard(vol_id, major_radius * 4)
+        
     cubit.cmd("imprint volume all")
     cubit.cmd("merge volume all")
 
