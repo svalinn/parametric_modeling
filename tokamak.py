@@ -146,6 +146,11 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
     cubit.init([''])
     vol_id = 0
     
+    if ('Inboard' in radial_build) or ('Outboard' in radial_build):
+        cubit.cylinder(4*major_radius, major_radius, major_radius, major_radius)
+        vol_id +=1
+        cyl_id = vol_id
+
     cubit.torus(major_radius, minor_radius)
     vol_id +=1
     plasma_id = vol_id
@@ -154,29 +159,24 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
     if 'Inboard' in radial_build:
         inboard_layers = list(radial_build['Inboard'].keys())
         inboard_thicknesses = list(radial_build['Inboard'].values())
-        outboard_layers = list(radial_build['Outboard'].keys())
-        outboard_thicknesses = list(radial_build['Outboard'].values())
-
-        cubit.cylinder(4*major_radius, major_radius, major_radius, major_radius)
-        vol_id +=1
-        cyl_id = vol_id
 
         contor(major_radius, minor_radius, inboard_thicknesses)
         vol_id += len(inboard_layers)
         vol_id = assemble_layers(vol_id, plasma_id, inboard_layers, cyl_id, "inboard")
-        last_inboard_id = vol_id
+
+        first_outboard_id = vol_id + 1
+        outboard_layers = list(radial_build['Outboard'].keys())
+        outboard_thicknesses = list(radial_build['Outboard'].values())
 
         contor(major_radius, minor_radius, outboard_thicknesses)
         vol_id += len(outboard_layers)
-        vol_id = assemble_layers(vol_id, last_inboard_id, outboard_layers, cyl_id, "outboard")
-        last_inboard_id = vol_id
+        vol_id = assemble_layers(vol_id, first_outboard_id, outboard_layers, cyl_id, "outboard")
 
-        cubit.cmd("subtract volume " + str(plasma_id) + " from volume " + str(last_inboard_id) + " keep_tool")
+        cubit.cmd("subtract volume " + str(plasma_id) + " from volume " + str(first_outboard_id) + " keep_tool")
         cubit.cmd("subtract vol " + str(cyl_id) " from vol " + str(vol_id) + " keep_tool")
         cubit.cmd("group 'mat:" + outboard_layers[0] + "' add vol " + str(vol_id))
         
         cubit.cmd("delete vol " + str(cyl_id))
-
 
     else:
         layers = list(radial_build.keys())
