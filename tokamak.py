@@ -75,7 +75,7 @@ def contor(major_radius, minor_radius, radial_build):
     for radius in radii:
         cubit.torus(major_radius,radius)
 
-def add_graveyard(col_id, length):
+def add_graveyard(vol_id, length):
     cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
     vol_id += 1
     cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
@@ -188,7 +188,7 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
 
     if graveyard == True:
         vol_id = add_graveyard(vol_id, major_radius * 4)
-        
+
     cubit.cmd("imprint volume all")
     cubit.cmd("merge volume all")
 
