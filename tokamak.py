@@ -75,6 +75,45 @@ def contor(major_radius, minor_radius, radial_build):
     for radius in radii:
         cubit.torus(major_radius,radius)
 
+def assemble_layers(last_id, first_id, layers, cyl_id=None, ib_ob=None):
+    """
+    Assemble tori into layers, either inboard, outboard or symmetric
+
+    Parameters
+    ----------
+    last_id : int
+        ID of the most recent volume created
+    first_id : int
+        ID of the first volume to be used in this operation
+    layers : list of strings
+        Names of layers
+    cyl_id : int
+        ID of cylindrical surface used to separate IB from OB
+        [default: None - not used in symmetric build]
+    ib_ob : string
+        Select either "inboard" or "outboard"
+        [default: None - not used in symmetric build]
+
+    Returns
+    --------
+    last_id : int
+        ID of the most recent volume created
+    """
+        
+    for id, layer_name in zip(range(last_id, first_id, -1), reversed(layers)):
+        cubit.cmd("subtract volume " + str(id - 1) + " from volume " + str(id) + " keep_tool")
+        last_id += 1
+        if ib_ob == "inboard":
+            cubit.cmd("intersect vol " + str(cyl_id) + " " + str(last_id) + " keep")
+            last_id += 1
+            cubit.cmd("delete vol " + str(last_id-1))
+        elif ib_ob = "outboard":
+            cubit.cmd("subtract vol " + str(cyl_id) + " from vol " + str(last_id) + " keep_tool")       
+        cubit.cmd("group 'mat:" + layer_name + "' add vol " + str(last_id))
+
+    return last_id
+
+
 def build_torus(major_radius, minor_radius, radial_build, graveyard):
     """
     Generates a circular tokamak geometry in Cubit/Trelis according to a radial build of
@@ -91,88 +130,62 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
     graveyard : bool, optional
         A flag used to determine whether a graveyard volume is to be added to the geometry
     """
+    cubit.init([''])
+    vol_id = 0
+    
+    cubit.torus(major_radius, minor_radius)
+    vol_id +=1
+    plasma_id = vol_id
+    cubit.cmd("group 'mat:Vacuum' add vol " + str(plasma_id))
+
     if 'Inboard' in radial_build:
         inboard_layers = list(radial_build['Inboard'].keys())
         inboard_thicknesses = list(radial_build['Inboard'].values())
         outboard_layers = list(radial_build['Outboard'].keys())
         outboard_thicknesses = list(radial_build['Outboard'].values())
 
-        cubit.init([''])
-
         cubit.cylinder(4*major_radius, major_radius, major_radius, major_radius)
-        cubit.torus(major_radius, minor_radius)
-        cubit.cmd("group 'mat:Vacuum' add vol 2")
+        vol_id +=1
+        cyl_id = vol_id
 
         contor(major_radius, minor_radius, inboard_thicknesses)
-
-        # volume id for inboard layers = number of elements in inboard layers array + 2
-        # from the 2 volumes created previously + 1 for subtraction operation + 1 for
-        # intersection operation
-        inboard_id = len(inboard_layers) + 4
-        for id, layer_name in zip(range(inboard_id - 2, 2, -1), reversed(inboard_layers)):
-            cubit.cmd("subtract volume " + str(id - 1) + " from volume " + str(id) + " keep_tool")
-            cubit.cmd("intersect vol 1 " + str(inboard_id - 1) + " keep")
-            cubit.cmd("delete vol " + str(inboard_id - 1))
-            cubit.cmd("group 'mat:" + layer_name + "' add vol " + str(inboard_id))
-            # increase id number by 2, 1 for subtraction operation + 1 for intersection
-            # operation
-            inboard_id += 2
+        vol_id += len(inboard_layers)
+        vol_id = assemble_layers(vol_id, plasma_id, inboard_layers, cyl_id, "inboard")
+        last_inboard_id = vol_id
 
         contor(major_radius, minor_radius, outboard_thicknesses)
+        vol_id += len(outboard_layers)
+        vol_id = assemble_layers(vol_id, last_inboard_id, outboard_layers, cyl_id, "outboard")
+        last_inboard_id = vol_id
+
+        cubit.cmd("subtract volume " + str(plasma_id) + " from volume " + str(last_inboard_id) + " keep_tool")
+        cubit.cmd("subtract vol " + str(cyl_id) " from vol " + str(vol_id) + " keep_tool")
+        cubit.cmd("group 'mat:" + outboard_layers[0] + "' add vol " + str(vol_id))
         
-        # volume id for outboard layers = number of elements in outboard layers array
-        # + id number left off on in inboard loop - 2 to undo +2 at end of loop + 1 for
-        # subtraction operation
-        outboard_id = len(outboard_layers) + inboard_id - 1
-        for id, layer_name in zip(range(outboard_id - 1, inboard_id - 1, -1), reversed(outboard_layers)):
-            cubit.cmd("subtract volume " + str(id - 1) + " from volume " + str(id) + " keep_tool")
-            cubit.cmd("subtract vol 1 from vol " + str(outboard_id) + " keep_tool")
-            cubit.cmd("group 'mat:" + layer_name + "' add vol " + str(outboard_id))
-            # increase if number by 1 for subtraction operation
-            outboard_id += 1
+        cubit.cmd("delete vol " + str(cyl_id))
 
-        cubit.cmd("subtract volume 2 from volume " + str(inboard_id - 1) + " keep_tool")
-        cubit.cmd("subtract vol 1 from vol " + str(outboard_id) + " keep_tool")
-        cubit.cmd("group 'mat:" + outboard_layers[0] + "' add vol " + str(outboard_id))
-        
-        cubit.cmd("delete vol 1")
-
-        if graveyard == True:
-            length = 4*major_radius
-            cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
-            cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
-            cubit.cmd("subtract vol " + str(outboard_id + 1) + " from vol " + str(outboard_id + 2))
-            cubit.cmd("group 'mat:Graveyard' add vol " + str(outboard_id + 3))
-
-        cubit.cmd("imprint volume all")
-        cubit.cmd("merge volume all")
 
     else:
         layers = list(radial_build.keys())
         thicknesses = list(radial_build.values())
 
-        cubit.init([''])
-
-        cubit.torus(major_radius,minor_radius)
-        cubit.cmd("group 'mat:Vacuum' add vol 1")
-
         contor(major_radius, minor_radius, thicknesses)
+        vol_id += len(thicknesses)
+        vol_id = assemble_layers(vol_id, plasma_id, layers)
 
-        vol_id = len(thicknesses) + 2
-        for id, layer_name in zip(range(vol_id - 1, 1, -1), reversed(layers)):
-            cubit.cmd("subtract volume " + str(id - 1) + " from volume " + str(id) + " keep_tool")
-            cubit.cmd("group 'mat:" + layer_name + "' add vol " + str(vol_id))
-            vol_id += 1
+    if graveyard == True:
+        length = 4*major_radius
+        cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
+        vol_id += 1
+        cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
+        vol_id += 1
+        cubit.cmd("subtract vol " + str(vol_id - 1) + " from vol " + str(vol_id))
+        vol_id += 1
 
-        if graveyard == True:
-            length = 4*major_radius
-            cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
-            cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
-            cubit.cmd("subtract vol " + str(vol_id) + " from vol " + str(vol_id + 1))
-            cubit.cmd("group 'mat:Graveyard' add vol " + str(vol_id + 2))
+        cubit.cmd("group 'mat:Graveyard' add vol " + str(vol_id))
 
-        cubit.cmd("imprint volume all")
-        cubit.cmd("merge volume all")
+    cubit.cmd("imprint volume all")
+    cubit.cmd("merge volume all")
 
 def save_geometry(export_path, dagmc):
     """
