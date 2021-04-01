@@ -17,7 +17,6 @@ Inboard:
   manifold: 6
   vacuum_vessel: 10
   shield: 23
-  tf_magnets: 63
 
 Outboard:
   armor: 0.025
@@ -26,4 +25,3 @@ Outboard:
   manifold: 6
   vacuum_vessel: 10
   shield: 17
-  tf_magnets: 63
