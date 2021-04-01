@@ -59,7 +59,7 @@ def contor(major_radius, minor_radius, radial_build):
     """
     A function used by the function build_torus that generatres concentric torii in
     Cubit/Trelis corresponding to the portion of the radial build (inboard, outboard, or
-    all) passed to the function.
+    symmetric) passed to the function.
 
     Parameters
     ----------
@@ -76,6 +76,21 @@ def contor(major_radius, minor_radius, radial_build):
         cubit.torus(major_radius,radius)
 
 def add_graveyard(vol_id, length):
+    """
+    Adds a cubic shell graveyard volume the the Cubit/Trelis geometry.
+
+    Parameters
+    ----------
+    vol_id : int
+        ID of the most recent volume created
+    length : int
+        Side length of the inner cube
+
+    Returns
+    -------
+    vol_id : int
+        ID of the most recent volume created
+    """
     cubit.cmd("brick x " + str(length) + " y " + str(length) + " z " + str(length))
     vol_id += 1
     cubit.cmd("brick x " + str(length*1.25) + " y " + str(length*1.25) + " z " + str(length*1.25))
@@ -90,7 +105,8 @@ def add_graveyard(vol_id, length):
 
 def assemble_layers(last_id, first_id, layers, cyl_id=None, ib_ob=None):
     """
-    Assemble tori into layers, either inboard, outboard or symmetric
+    Assembles torii into layers corresponding to the portion of the radial build (inboard, outboard, or
+    symmetric) passed to the function.
 
     Parameters
     ----------
@@ -120,7 +136,7 @@ def assemble_layers(last_id, first_id, layers, cyl_id=None, ib_ob=None):
             cubit.cmd("intersect vol " + str(cyl_id) + " " + str(last_id) + " keep")
             last_id += 1
             cubit.cmd("delete vol " + str(last_id-1))
-        elif ib_ob = "outboard":
+        elif ib_ob == "outboard":
             cubit.cmd("subtract vol " + str(cyl_id) + " from vol " + str(last_id) + " keep_tool")       
         cubit.cmd("group 'mat:" + layer_name + "' add vol " + str(last_id))
 
@@ -165,6 +181,7 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
         vol_id = assemble_layers(vol_id, plasma_id, inboard_layers, cyl_id, "inboard")
 
         first_outboard_id = vol_id + 1
+        
         outboard_layers = list(radial_build['Outboard'].keys())
         outboard_thicknesses = list(radial_build['Outboard'].values())
 
@@ -173,7 +190,8 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
         vol_id = assemble_layers(vol_id, first_outboard_id, outboard_layers, cyl_id, "outboard")
 
         cubit.cmd("subtract volume " + str(plasma_id) + " from volume " + str(first_outboard_id) + " keep_tool")
-        cubit.cmd("subtract vol " + str(cyl_id) " from vol " + str(vol_id) + " keep_tool")
+        vol_id += 1
+        cubit.cmd("subtract vol " + str(cyl_id) + " from vol " + str(vol_id) + " keep_tool")
         cubit.cmd("group 'mat:" + outboard_layers[0] + "' add vol " + str(vol_id))
         
         cubit.cmd("delete vol " + str(cyl_id))
