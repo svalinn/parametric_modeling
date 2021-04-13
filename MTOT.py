@@ -29,6 +29,7 @@ This script can also be imported as a module and contains the following function
 import argparse
 import cubit
 import yaml
+#import ruamel.yaml
 import numpy as np
 
 def arg_parser():
@@ -56,6 +57,9 @@ def read_radial_build(file_):
     radial_build : list
         A Python dictionary storing the tokamak radial build data
     """
+    #yaml = ruamel.yaml.YAML()
+    #yaml.allow_duplicate_keys = True
+    #radial_build = yaml.load(file_)
     radial_build = yaml.load(file_, Loader=yaml.FullLoader)
     return radial_build
 
@@ -177,17 +181,26 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
     cubit.cmd("group 'mat:Vacuum' add vol " + str(plasma_id))
 
     if 'Inboard' in radial_build:
-        inboard_layers = list(radial_build['Inboard'].keys())
-        inboard_thicknesses = list(radial_build['Inboard'].values())
-
+        
+        inboard_layers = []
+        inboard_thicknesses = []
+        for index in range(len(radial_build['Inboard'])):
+            pair = radial_build['Inboard'][index]
+            inboard_layers += list(pair.keys())
+            inboard_thicknesses += list(pair.values())
+        
         contor(major_radius, minor_radius, inboard_thicknesses)
         vol_id += len(inboard_layers)
         vol_id = assemble_layers(vol_id, plasma_id, inboard_layers, cyl_id, "inboard")
 
         first_outboard_id = vol_id + 1
         
-        outboard_layers = list(radial_build['Outboard'].keys())
-        outboard_thicknesses = list(radial_build['Outboard'].values())
+        outboard_layers = []
+        outboard_thicknesses = []
+        for index in range(len(radial_build['Outboard'])):
+            pair = radial_build['Outboard'][index]
+            outboard_layers += list(pair.keys())
+            outboard_thicknesses += list(pair.values())
 
         contor(major_radius, minor_radius, outboard_thicknesses)
         vol_id += len(outboard_layers)
@@ -201,8 +214,12 @@ def build_torus(major_radius, minor_radius, radial_build, graveyard):
         cubit.cmd("delete vol " + str(cyl_id))
 
     else:
-        layers = list(radial_build.keys())
-        thicknesses = list(radial_build.values())
+        layers = []
+        thicknesses = []
+        for index in range(len(radial_build)):
+            pair = radial_build[index]
+            layers += list(pair.keys())
+            thicknesses += list(pair.values())
 
         contor(major_radius, minor_radius, thicknesses)
         vol_id += len(thicknesses)
