@@ -1,0 +1,30 @@
+# A tokamak radial build, ordered radially outward from the plasma. If differentiation
+# between the inboard and outboard is desired, separate lists of the desired material
+# layers must be made for each, headed by "Inboard" and "Outboard". Otherwise, a single
+# list represents a tokamak that is radially symmetric.
+
+# The example given below is radially symmetric.
+
+# Format
+# ------
+# - <material_layer>: <thickness [cm]>
+
+# Based on the FESS-FNSF
+
+# Note that for DAGMC geometries the word "vacuum" cannot be included in any part of the
+# material layer name unless the user wants that region to be treated as vacuum.
+
+# Note the repeated layer names. Specifying a volume of interest within a region (e.g.
+# the 0.5 cm thick layers) is useful for various applications, while maintaining the same
+# layer name renders an additional material definition unecesary, at least if OpenMC is
+# used.
+---
+- first_wall: 4
+- breeder: 49
+- back_wall: 2
+- cooling_manifold: 6
+- structural_ring: 20
+- Vacuum: 75
+- vac_vessel: 10
+- Vacuum: 2
+- lt_shield: 17
