@@ -1,0 +1,16 @@
+# A tokamak radial build, ordered radially outward from the plasma. If differentiation
+# between the inboard and outboard is desired, separate lists of the desired material
+# layers must be made for each, headed by "Inboard" and "Outboard". Otherwise, a single
+# list represents a tokamak that is radially symmetric.
+
+# The example given below is radially symmetric.
+
+# Format
+# ------
+# - <material_layer>: <thickness [cm]>
+
+# Based on the FESS-FNSF
+---
+- first_wall: 4
+- breeder: 49
+- back_wall: 2
